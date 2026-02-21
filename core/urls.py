@@ -13,6 +13,7 @@ urlpatterns = [
 
     path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
     path('manager/review/<int:job_id>/', views.manager_job_review, name='manager_job_review'),
+    path('manager/settings/', views.manager_settings, name='manager_settings'),
 
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
 ]

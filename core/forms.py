@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import JobCard, JobDetail
+from .models import JobCard, JobDetail, CompanyProfile
 
 class JobCardForm(forms.ModelForm):
     class Meta:
@@ -49,3 +49,15 @@ class ManagerReviewForm(forms.ModelForm):
             self.fields['start_time'].initial = self.instance.start_time.strftime('%Y-%m-%dT%H:%M')
         if self.instance and self.instance.end_time:
             self.fields['end_time'].initial = self.instance.end_time.strftime('%Y-%m-%dT%H:%M')
+
+class CompanyProfileForm(forms.ModelForm):
+    extra_fields = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+    class Meta:
+        model = CompanyProfile
+        fields = ['logo', 'address', 'default_email', 'extra_fields']
+        widgets = {
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'default_email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }

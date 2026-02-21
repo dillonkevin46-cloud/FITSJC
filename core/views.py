@@ -1,8 +1,13 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
-from .models import JobCard, JobDetail
-from .forms import JobCardForm, JobDetailFormSet, SignatureSubmissionForm, ManagerReviewForm
+from .models import JobCard, JobDetail, CompanyProfile
+from .forms import JobCardForm, JobDetailFormSet, SignatureSubmissionForm, ManagerReviewForm, CompanyProfileForm
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
+from django.conf import settings
+from django.http import HttpResponse
 
 def is_technician(user):
     return user.is_technician()
@@ -94,12 +99,6 @@ def technician_job_detail(request, job_id):
         'signature_form': signature_form
     })
 
-from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
-from django.conf import settings
-from django.http import HttpResponse
-from .models import CompanyProfile
-
 # Try to import xhtml2pdf, but handle failure gracefully for dev environment
 try:
     from xhtml2pdf import pisa
@@ -147,6 +146,33 @@ def manager_job_review(request, job_id):
         form = ManagerReviewForm(instance=jobcard)
 
     return render(request, 'core/jobcard_review.html', {'jobcard': jobcard, 'form': form})
+
+@login_required
+@user_passes_test(is_manager)
+def manager_settings(request):
+    company_profile = CompanyProfile.objects.first()
+    if not company_profile:
+        company_profile = CompanyProfile.objects.create()
+
+    if request.method == 'POST':
+        form = CompanyProfileForm(request.POST, request.FILES, instance=company_profile)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            extra_fields_json = form.cleaned_data.get('extra_fields')
+            if extra_fields_json:
+                try:
+                    profile.extra_fields = json.loads(extra_fields_json)
+                except json.JSONDecodeError:
+                    pass # Or add error
+            profile.save()
+            return redirect('manager_settings')
+    else:
+        initial_data = {}
+        if company_profile.extra_fields:
+            initial_data['extra_fields'] = json.dumps(company_profile.extra_fields)
+        form = CompanyProfileForm(instance=company_profile, initial=initial_data)
+
+    return render(request, 'core/manager_settings.html', {'form': form, 'company_profile': company_profile})
 
 @login_required
 @user_passes_test(is_admin)
