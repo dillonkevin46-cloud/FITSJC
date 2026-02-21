@@ -11,7 +11,7 @@
                 <p><strong>Client:</strong> {{ jobcard.client_name }}</p>
                 <p><strong>Company:</strong> {{ jobcard.company_name }}</p>
                 <p><strong>Technician:</strong> {{ jobcard.technician.username }}</p>
-
+                
                 <h5>Work Done</h5>
                 <table class="table table-sm">
                     <thead>
@@ -33,7 +33,7 @@
                 </table>
             </div>
         </div>
-
+        
         <div class="card mb-3">
             <div class="card-header">Signatures</div>
             <div class="card-body">
@@ -56,29 +56,29 @@
             </div>
         </div>
     </div>
-
+    
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">Review & Sign Off</div>
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Start Time</label>
                         {{ form.start_time }}
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">End Time</label>
                         {{ form.end_time }}
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Manager Notes</label>
                         {{ form.manager_notes }}
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Manager Signature</label>
                         <div class="border bg-light" style="width: 400px; height: 200px;">
@@ -87,7 +87,7 @@
                         <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSignature()">Clear</button>
                         {{ form.manager_signature_data }}
                     </div>
-
+                    
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-secondary">Save Changes</button>
                         <button type="submit" name="sign_off" class="btn btn-success" onclick="prepareSignature()">Sign Off & Email Client</button>
@@ -104,7 +104,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('manager-signature');
         managerPad = new SignaturePad(canvas);
-
+        
         function resizeCanvas() {
             var ratio =  Math.max(window.devicePixelRatio || 1, 1);
             canvas.width = canvas.offsetWidth * ratio;
@@ -114,11 +114,11 @@
         }
         resizeCanvas();
     });
-
+    
     function clearSignature() {
         if (managerPad) managerPad.clear();
     }
-
+    
     function prepareSignature() {
         if (managerPad && !managerPad.isEmpty()) {
             document.getElementById('id_manager_signature_data').value = managerPad.toDataURL();

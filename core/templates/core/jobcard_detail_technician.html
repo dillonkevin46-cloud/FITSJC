@@ -8,7 +8,7 @@
             <h2>Job Card: {{ jobcard.jobcard_id }}</h2>
             <a href="{% url 'technician_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
         </div>
-
+        
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row">
@@ -50,7 +50,7 @@
         <form method="post" id="job-details-form">
             {% csrf_token %}
             {{ formset.management_form }}
-
+            
             <div id="job-details-container">
                 {% for form in formset %}
                     <div class="job-detail-row row mb-2 align-items-end">
@@ -79,10 +79,10 @@
                     <hr>
                 {% endfor %}
             </div>
-
+            
             <button type="button" id="add-row" class="btn btn-secondary btn-sm mt-2">+ Add Item</button>
             <button type="submit" name="save_details" class="btn btn-primary btn-sm mt-2">Save Details</button>
-
+        
             {% if jobcard.end_time %}
             <hr class="my-4">
             <h3>Signatures</h3>
@@ -102,10 +102,10 @@
                     <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSignature('client-signature')">Clear</button>
                 </div>
             </div>
-
+            
             {{ signature_form.technician_signature }}
             {{ signature_form.client_signature }}
-
+            
             <div class="mt-4 text-center">
                 <button type="submit" name="submit_job" class="btn btn-success btn-lg" onclick="return prepareSignatures(event)">Submit Job Card</button>
             </div>
@@ -147,24 +147,24 @@
         const container = document.getElementById('job-details-container');
         const totalForms = document.getElementById('id_details-TOTAL_FORMS');
         const currentFormCount = parseInt(totalForms.value);
-
+        
         const emptyFormHtml = document.getElementById('empty-form').innerHTML;
         const newRowHtml = emptyFormHtml.replace(/__prefix__/g, currentFormCount);
-
+        
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = newRowHtml;
-
+        
         // Remove the outer div created by tempDiv
         while (tempDiv.firstChild) {
             container.appendChild(tempDiv.firstChild);
         }
-
+        
         totalForms.value = currentFormCount + 1;
     });
 
     // Signatures
     let techPad, clientPad;
-
+    
     document.addEventListener('DOMContentLoaded', function() {
         const techCanvas = document.getElementById('tech-signature');
         if (techCanvas) {
@@ -179,7 +179,7 @@
             }
             resizeCanvas(techCanvas, techPad);
         }
-
+        
         const clientCanvas = document.getElementById('client-signature');
         if (clientCanvas) {
             clientPad = new SignaturePad(clientCanvas);
@@ -193,12 +193,12 @@
             resizeCanvas(clientCanvas, clientPad);
         }
     });
-
+    
     window.clearSignature = function(id) {
         if (id === 'tech-signature' && techPad) techPad.clear();
         if (id === 'client-signature' && clientPad) clientPad.clear();
     };
-
+    
     window.prepareSignatures = function(event) {
         if (techPad && clientPad) {
             if (techPad.isEmpty() || clientPad.isEmpty()) {

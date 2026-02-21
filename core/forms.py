@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import inlineformset_factory
-from .models import JobCard, JobDetail
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from .models import JobCard, JobDetail, CompanyProfile, CustomUser
 
 class JobCardForm(forms.ModelForm):
     class Meta:
@@ -49,3 +50,38 @@ class ManagerReviewForm(forms.ModelForm):
             self.fields['start_time'].initial = self.instance.start_time.strftime('%Y-%m-%dT%H:%M')
         if self.instance and self.instance.end_time:
             self.fields['end_time'].initial = self.instance.end_time.strftime('%Y-%m-%dT%H:%M')
+
+class CompanyProfileForm(forms.ModelForm):
+    extra_fields = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+    class Meta:
+        model = CompanyProfile
+        fields = ['logo', 'address', 'default_email', 'extra_fields']
+        widgets = {
+            'logo': forms.FileInput(attrs={'class': 'form-control'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'default_email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+class CustomUserCreationForm(UserCreationForm):
+    class Meta(UserCreationForm.Meta):
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 'role')
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+class CustomUserChangeForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 'role', 'is_active')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            if field == 'is_active':
+                self.fields[field].widget.attrs.update({'class': 'form-check-input'})
+            else:
+                self.fields[field].widget.attrs.update({'class': 'form-control'})

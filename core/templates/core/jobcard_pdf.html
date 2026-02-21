@@ -17,14 +17,14 @@
         <h1>Job Card: {{ jobcard.jobcard_id }}</h1>
         <p>{{ jobcard.company_name }}</p>
     </div>
-
+    
     <div>
         <p><strong>Client:</strong> {{ jobcard.client_name }}</p>
         <p><strong>Technician:</strong> {{ jobcard.technician.username }}</p>
         <p><strong>Start Time:</strong> {{ jobcard.start_time }}</p>
         <p><strong>End Time:</strong> {{ jobcard.end_time }}</p>
     </div>
-
+    
     <h3>Work Done</h3>
     <table class="details-table">
         <thead>
@@ -44,12 +44,12 @@
             {% endfor %}
         </tbody>
     </table>
-
+    
     {% if jobcard.manager_notes %}
     <h3>Notes</h3>
     <p>{{ jobcard.manager_notes }}</p>
     {% endif %}
-
+    
     <div class="signatures">
         <div class="signature-box">
             <p>Technician</p>

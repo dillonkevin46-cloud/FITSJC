@@ -21,6 +21,14 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav ms-auto mb-2 mb-md-0">
                     {% if user.is_authenticated %}
+                        {% if user.role == 'manager' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'manager_settings' %}">Settings</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'manager_user_list' %}">Users</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <span class="nav-link">Welcome, {{ user.username }} ({{ user.role }})</span>
                         </li>

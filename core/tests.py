@@ -29,7 +29,7 @@ class JobCardTests(TestCase):
         self.client.login(username='manager', password='password')
         response = self.client.get(reverse('manager_dashboard'))
         self.assertEqual(response.status_code, 200)
-
+        
     def test_role_redirect(self):
         self.client.login(username='tech', password='password')
         response = self.client.get(reverse('dashboard'))

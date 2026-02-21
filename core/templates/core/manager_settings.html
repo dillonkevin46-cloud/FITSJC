@@ -1,0 +1,170 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{% url 'manager_dashboard' %}" class="list-group-item list-group-item-action">
+                Dashboard
+            </a>
+            <a href="{% url 'manager_settings' %}" class="list-group-item list-group-item-action active">
+                Settings
+            </a>
+            <a href="{% url 'manager_user_list' %}" class="list-group-item list-group-item-action">
+                Manage Users
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Company Settings</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="settings-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Company Logo</label>
+                        {{ form.logo }}
+                        {% if company_profile.logo %}
+                            <div class="mt-2">
+                                <img src="{{ company_profile.logo.url }}" alt="Current Logo" style="max-height: 100px;">
+                                <small class="text-muted d-block">Current Logo</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        {{ form.address }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Default Email</label>
+                        {{ form.default_email }}
+                        <div class="form-text">Used as the sender for job card emails if configured.</div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <label class="form-label h5">Extra Fields (Custom Data)</label>
+                        <p class="text-muted small">Define custom fields that will appear on job cards or be stored with company profile.</p>
+                        
+                        <div id="extra-fields-container">
+                            <!-- Dynamic fields will be injected here -->
+                        </div>
+                        
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="add-field-btn">
+                            + Add Custom Field
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden input to store the JSON string -->
+                    {{ form.extra_fields }}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.getElementById('extra-fields-container');
+        const addButton = document.getElementById('add-field-btn');
+        const hiddenInput = document.getElementById('id_extra_fields');
+        const form = document.getElementById('settings-form');
+        
+        // Parse existing JSON data
+        let existingData = {};
+        try {
+            if (hiddenInput.value) {
+                existingData = JSON.parse(hiddenInput.value);
+            }
+        } catch (e) {
+            console.error("Error parsing existing JSON data:", e);
+        }
+        
+        // Function to create a field row
+        function createRow(key = '', value = '') {
+            const row = document.createElement('div');
+            row.className = 'row mb-2 extra-field-row';
+            
+            // Key Input
+            const colKey = document.createElement('div');
+            colKey.className = 'col-md-5';
+            const inputKey = document.createElement('input');
+            inputKey.type = 'text';
+            inputKey.className = 'form-control field-key';
+            inputKey.placeholder = 'Field Name (Key)';
+            inputKey.value = key;
+            colKey.appendChild(inputKey);
+
+            // Value Input
+            const colValue = document.createElement('div');
+            colValue.className = 'col-md-5';
+            const inputValue = document.createElement('input');
+            inputValue.type = 'text';
+            inputValue.className = 'form-control field-value';
+            inputValue.placeholder = 'Default Value';
+            inputValue.value = value;
+            colValue.appendChild(inputValue);
+            
+            // Delete Button
+            const colDel = document.createElement('div');
+            colDel.className = 'col-md-2';
+            const btnDel = document.createElement('button');
+            btnDel.type = 'button';
+            btnDel.className = 'btn btn-danger btn-sm delete-row-btn';
+            btnDel.textContent = 'Delete';
+            btnDel.addEventListener('click', function() {
+                row.remove();
+            });
+            colDel.appendChild(btnDel);
+
+            row.appendChild(colKey);
+            row.appendChild(colValue);
+            row.appendChild(colDel);
+            
+            container.appendChild(row);
+        }
+        
+        // Populate existing fields
+        if (existingData && typeof existingData === 'object') {
+            for (const [key, value] of Object.entries(existingData)) {
+                createRow(key, value);
+            }
+        }
+        
+        // Add new field button
+        addButton.addEventListener('click', function() {
+            createRow();
+        });
+        
+        // Intercept form submission
+        form.addEventListener('submit', function(e) {
+            const rows = container.querySelectorAll('.extra-field-row');
+            const data = {};
+            
+            rows.forEach(row => {
+                const keyInput = row.querySelector('.field-key');
+                const valueInput = row.querySelector('.field-value');
+                const key = keyInput.value.trim();
+                const value = valueInput.value.trim();
+                
+                if (key) {
+                    data[key] = value;
+                }
+            });
+            
+            hiddenInput.value = JSON.stringify(data);
+        });
+    });
+</script>
+{% endblock %}

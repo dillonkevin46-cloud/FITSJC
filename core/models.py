@@ -46,14 +46,14 @@ class JobCard(models.Model):
     company_name = models.CharField(max_length=255, blank=True)
     start_time = models.DateTimeField(null=True, blank=True)
     end_time = models.DateTimeField(null=True, blank=True)
-
+    
     technician = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, related_name='jobcards')
-
+    
     # Signatures stored as Base64 strings
-    technician_signature = models.TextField(blank=True, null=True)
+    technician_signature = models.TextField(blank=True, null=True) 
     client_signature = models.TextField(blank=True, null=True)
     manager_signature = models.TextField(blank=True, null=True)
-
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     manager_notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

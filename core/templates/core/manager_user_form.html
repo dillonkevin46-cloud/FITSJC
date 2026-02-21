@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{% url 'manager_dashboard' %}" class="list-group-item list-group-item-action">
+                Dashboard
+            </a>
+            <a href="{% url 'manager_settings' %}" class="list-group-item list-group-item-action">
+                Settings
+            </a>
+            <a href="{% url 'manager_user_list' %}" class="list-group-item list-group-item-action active">
+                Manage Users
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">Save User</button>
+                        <a href="{% url 'manager_user_list' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
