@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: sans-serif; font-size: 12px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .details-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .details-table th, .details-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .details-table th { background-color: #f2f2f2; }
+        .signatures { margin-top: 30px; width: 100%; }
+        .signature-box { width: 30%; float: left; text-align: center; margin-right: 3%; display: inline-block; vertical-align: top;}
+        .signature-img { max-width: 150px; max-height: 80px; border-bottom: 1px solid #000; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Job Card: {{ jobcard.jobcard_id }}</h1>
+        <p>{{ jobcard.company_name }}</p>
+    </div>
+
+    <div>
+        <p><strong>Client:</strong> {{ jobcard.client_name }}</p>
+        <p><strong>Technician:</strong> {{ jobcard.technician.username }}</p>
+        <p><strong>Start Time:</strong> {{ jobcard.start_time }}</p>
+        <p><strong>End Time:</strong> {{ jobcard.end_time }}</p>
+    </div>
+
+    <h3>Work Done</h3>
+    <table class="details-table">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Hardware Replaced</th>
+                <th>Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for detail in jobcard.details.all %}
+            <tr>
+                <td>{{ detail.description }}</td>
+                <td>{{ detail.hardware_replaced }}</td>
+                <td>{{ detail.quantity }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if jobcard.manager_notes %}
+    <h3>Notes</h3>
+    <p>{{ jobcard.manager_notes }}</p>
+    {% endif %}
+
+    <div class="signatures">
+        <div class="signature-box">
+            <p>Technician</p>
+            {% if jobcard.technician_signature %}
+            <img src="{{ jobcard.technician_signature }}" class="signature-img">
+            {% endif %}
+        </div>
+        <div class="signature-box">
+            <p>Client</p>
+            {% if jobcard.client_signature %}
+            <img src="{{ jobcard.client_signature }}" class="signature-img">
+            {% endif %}
+        </div>
+        <div class="signature-box">
+            <p>Manager</p>
+            {% if jobcard.manager_signature %}
+            <img src="{{ jobcard.manager_signature }}" class="signature-img">
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,215 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Job Card: {{ jobcard.jobcard_id }}</h2>
+            <a href="{% url 'technician_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Client:</strong> {{ jobcard.client_name }}</p>
+                        <p><strong>Company:</strong> {{ jobcard.company_name }}</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="mb-2">
+                            <strong>Start Time:</strong> {{ jobcard.start_time|default:"Not Started" }}
+                            {% if not jobcard.start_time %}
+                                <form method="post" class="d-inline ms-2">
+                                    {% csrf_token %}
+                                    <button type="submit" name="start_job" class="btn btn-success btn-sm">Start Job</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <strong>End Time:</strong> {{ jobcard.end_time|default:"In Progress" }}
+                             {% if jobcard.start_time and not jobcard.end_time %}
+                                <form method="post" class="d-inline ms-2">
+                                    {% csrf_token %}
+                                    <button type="submit" name="stop_job" class="btn btn-danger btn-sm">Stop Job</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h3>Job Details</h3>
+    </div>
+    <div class="card-body">
+        <form method="post" id="job-details-form">
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            <div id="job-details-container">
+                {% for form in formset %}
+                    <div class="job-detail-row row mb-2 align-items-end">
+                        {{ form.id }}
+                        <div class="col-md-5">
+                            <label class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Hardware</label>
+                            {{ form.hardware_replaced }}
+                        </div>
+                         <div class="col-md-2">
+                            <label class="form-label">Qty</label>
+                            {{ form.quantity }}
+                        </div>
+                        <div class="col-md-1">
+                             {% if formset.can_delete %}
+                                <div class="form-check">
+                                    {{ form.DELETE }}
+                                    <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Delete</label>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr>
+                {% endfor %}
+            </div>
+
+            <button type="button" id="add-row" class="btn btn-secondary btn-sm mt-2">+ Add Item</button>
+            <button type="submit" name="save_details" class="btn btn-primary btn-sm mt-2">Save Details</button>
+
+            {% if jobcard.end_time %}
+            <hr class="my-4">
+            <h3>Signatures</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Technician Signature</h4>
+                    <div class="border bg-light" style="width: 400px; height: 200px;">
+                        <canvas id="tech-signature" width="400" height="200"></canvas>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSignature('tech-signature')">Clear</button>
+                </div>
+                <div class="col-md-6">
+                    <h4>Client Signature</h4>
+                    <div class="border bg-light" style="width: 400px; height: 200px;">
+                        <canvas id="client-signature" width="400" height="200"></canvas>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSignature('client-signature')">Clear</button>
+                </div>
+            </div>
+
+            {{ signature_form.technician_signature }}
+            {{ signature_form.client_signature }}
+
+            <div class="mt-4 text-center">
+                <button type="submit" name="submit_job" class="btn btn-success btn-lg" onclick="return prepareSignatures(event)">Submit Job Card</button>
+            </div>
+            {% else %}
+            <div class="alert alert-warning mt-4">You must stop the job before signing and submitting.</div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Hidden Empty Form for JS -->
+<div id="empty-form" style="display:none;">
+    <div class="job-detail-row row mb-2 align-items-end">
+        <input type="hidden" name="details-__prefix__-id" id="id_details-__prefix__-id">
+        <div class="col-md-5">
+            <label class="form-label">Description</label>
+            <input type="text" name="details-__prefix__-description" class="form-control" placeholder="Description" maxlength="255" id="id_details-__prefix__-description">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Hardware</label>
+            <input type="text" name="details-__prefix__-hardware_replaced" class="form-control" placeholder="Hardware Replaced" maxlength="255" id="id_details-__prefix__-hardware_replaced">
+        </div>
+         <div class="col-md-2">
+            <label class="form-label">Qty</label>
+            <input type="number" name="details-__prefix__-quantity" class="form-control" value="1" min="1" id="id_details-__prefix__-quantity">
+        </div>
+        <div class="col-md-1">
+             <span class="text-muted">Delete</span>
+             <input type="checkbox" name="details-__prefix__-DELETE" id="id_details-__prefix__-DELETE">
+        </div>
+    </div>
+    <hr>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    // Dynamic Formset
+    document.getElementById('add-row').addEventListener('click', function() {
+        const container = document.getElementById('job-details-container');
+        const totalForms = document.getElementById('id_details-TOTAL_FORMS');
+        const currentFormCount = parseInt(totalForms.value);
+
+        const emptyFormHtml = document.getElementById('empty-form').innerHTML;
+        const newRowHtml = emptyFormHtml.replace(/__prefix__/g, currentFormCount);
+
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = newRowHtml;
+
+        // Remove the outer div created by tempDiv
+        while (tempDiv.firstChild) {
+            container.appendChild(tempDiv.firstChild);
+        }
+
+        totalForms.value = currentFormCount + 1;
+    });
+
+    // Signatures
+    let techPad, clientPad;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const techCanvas = document.getElementById('tech-signature');
+        if (techCanvas) {
+            techPad = new SignaturePad(techCanvas);
+            // Resize canvas for high DPI
+             function resizeCanvas(canvas, pad) {
+                var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                canvas.getContext("2d").scale(ratio, ratio);
+                pad.clear(); // otherwise isEmpty() might return incorrect value
+            }
+            resizeCanvas(techCanvas, techPad);
+        }
+
+        const clientCanvas = document.getElementById('client-signature');
+        if (clientCanvas) {
+            clientPad = new SignaturePad(clientCanvas);
+             function resizeCanvas(canvas, pad) {
+                var ratio =  Math.max(window.devicePixelRatio || 1, 1);
+                canvas.width = canvas.offsetWidth * ratio;
+                canvas.height = canvas.offsetHeight * ratio;
+                canvas.getContext("2d").scale(ratio, ratio);
+                pad.clear();
+            }
+            resizeCanvas(clientCanvas, clientPad);
+        }
+    });
+
+    window.clearSignature = function(id) {
+        if (id === 'tech-signature' && techPad) techPad.clear();
+        if (id === 'client-signature' && clientPad) clientPad.clear();
+    };
+
+    window.prepareSignatures = function(event) {
+        if (techPad && clientPad) {
+            if (techPad.isEmpty() || clientPad.isEmpty()) {
+                alert("Both signatures are required.");
+                event.preventDefault();
+                return false;
+            }
+            document.getElementById('id_technician_signature').value = techPad.toDataURL();
+            document.getElementById('id_client_signature').value = clientPad.toDataURL();
+        }
+        return true;
+    };
+</script>
+{% endblock %}
