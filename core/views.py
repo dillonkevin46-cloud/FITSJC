@@ -2,8 +2,11 @@ import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
-from .models import JobCard, JobDetail, CompanyProfile
-from .forms import JobCardForm, JobDetailFormSet, SignatureSubmissionForm, ManagerReviewForm, CompanyProfileForm
+from .models import JobCard, JobDetail, CompanyProfile, CustomUser
+from .forms import (
+    JobCardForm, JobDetailFormSet, SignatureSubmissionForm,
+    ManagerReviewForm, CompanyProfileForm, CustomUserCreationForm, CustomUserChangeForm
+)
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -148,33 +151,6 @@ def manager_job_review(request, job_id):
     return render(request, 'core/jobcard_review.html', {'jobcard': jobcard, 'form': form})
 
 @login_required
-@user_passes_test(is_manager)
-def manager_settings(request):
-    company_profile = CompanyProfile.objects.first()
-    if not company_profile:
-        company_profile = CompanyProfile.objects.create()
-
-    if request.method == 'POST':
-        form = CompanyProfileForm(request.POST, request.FILES, instance=company_profile)
-        if form.is_valid():
-            profile = form.save(commit=False)
-            extra_fields_json = form.cleaned_data.get('extra_fields')
-            if extra_fields_json:
-                try:
-                    profile.extra_fields = json.loads(extra_fields_json)
-                except json.JSONDecodeError:
-                    pass # Or add error
-            profile.save()
-            return redirect('manager_settings')
-    else:
-        initial_data = {}
-        if company_profile.extra_fields:
-            initial_data['extra_fields'] = json.dumps(company_profile.extra_fields)
-        form = CompanyProfileForm(instance=company_profile, initial=initial_data)
-
-    return render(request, 'core/manager_settings.html', {'form': form, 'company_profile': company_profile})
-
-@login_required
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     jobcards = JobCard.objects.filter(status='archived').order_by('-updated_at')
@@ -214,3 +190,63 @@ def send_jobcard_email(jobcard):
         email.send()
     else:
         print("PDF generation failed, email not sent.")
+
+# --- NEW MANAGER VIEWS ---
+
+@login_required
+@user_passes_test(is_manager)
+def manager_settings(request):
+    company_profile = CompanyProfile.objects.first()
+    if not company_profile:
+        company_profile = CompanyProfile.objects.create()
+
+    if request.method == 'POST':
+        form = CompanyProfileForm(request.POST, request.FILES, instance=company_profile)
+        if form.is_valid():
+            profile = form.save(commit=False)
+            extra_fields_json = form.cleaned_data.get('extra_fields')
+            if extra_fields_json:
+                try:
+                    profile.extra_fields = json.loads(extra_fields_json)
+                except json.JSONDecodeError:
+                    pass # Or add error
+            profile.save()
+            return redirect('manager_settings')
+    else:
+        initial_data = {}
+        if company_profile.extra_fields:
+            initial_data['extra_fields'] = json.dumps(company_profile.extra_fields)
+        form = CompanyProfileForm(instance=company_profile, initial=initial_data)
+
+    return render(request, 'core/manager_settings.html', {'form': form, 'company_profile': company_profile})
+
+@login_required
+@user_passes_test(is_manager)
+def manager_user_list(request):
+    users = CustomUser.objects.all().order_by('username')
+    return render(request, 'core/manager_user_list.html', {'users': users})
+
+@login_required
+@user_passes_test(is_manager)
+def manager_user_create(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('manager_user_list')
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'core/manager_user_form.html', {'form': form, 'title': 'Add New User'})
+
+@login_required
+@user_passes_test(is_manager)
+def manager_user_edit(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('manager_user_list')
+    else:
+        form = CustomUserChangeForm(instance=user)
+    return render(request, 'core/manager_user_form.html', {'form': form, 'title': f'Edit User: {user.username}'})

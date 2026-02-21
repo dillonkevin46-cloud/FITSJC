@@ -16,7 +16,7 @@ class JobDetailInline(admin.TabularInline):
     extra = 1
 
 class JobCardAdmin(admin.ModelAdmin):
-    list_display = ('jobcard_id', 'client_name', 'company_name', 'status', 'created_at')
+    list_display = ('jobcard_id', 'client_name', 'status', 'created_at')
     list_filter = ('status', 'technician', 'created_at')
     inlines = [JobDetailInline]
     search_fields = ('jobcard_id', 'client_name', 'company_name')

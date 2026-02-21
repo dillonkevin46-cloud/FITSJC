@@ -13,7 +13,11 @@ urlpatterns = [
 
     path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
     path('manager/review/<int:job_id>/', views.manager_job_review, name='manager_job_review'),
+
     path('manager/settings/', views.manager_settings, name='manager_settings'),
+    path('manager/users/', views.manager_user_list, name='manager_user_list'),
+    path('manager/users/create/', views.manager_user_create, name='manager_user_create'),
+    path('manager/users/edit/<int:user_id>/', views.manager_user_edit, name='manager_user_edit'),
 
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
 ]
