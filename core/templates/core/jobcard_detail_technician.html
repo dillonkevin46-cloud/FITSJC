@@ -157,6 +157,20 @@
         </div>
     </div>
 
+    <!-- Custom Fields / Additional Information -->
+    {% if company_profile.extra_fields %}
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-ui-radios me-2"></i>Additional Information</h6>
+        </div>
+        <div class="card-body p-4">
+            <div id="custom-fields-container"></div>
+            <!-- Hidden input to store submitted custom fields data -->
+            <input type="hidden" name="custom_fields_data" id="id_custom_fields_data">
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Signatures Section -->
     {% if jobcard.end_time %}
     <div class="row">
@@ -265,7 +279,12 @@
     }
 </style>
 
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/formBuilder/3.8.3/form-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
 <script>
     // Dynamic Formset
     document.getElementById('add-row').addEventListener('click', function() {
@@ -287,20 +306,52 @@
         totalForms.value = currentFormCount + 1;
     });
 
-    // Signatures
+    // Form Render & Signatures
     let techPad, clientPad;
 
     document.addEventListener('DOMContentLoaded', function() {
+        // --- Form Render Initialization ---
+        const fbRender = document.getElementById('custom-fields-container');
+        if (fbRender) {
+            let formData = [];
+            let userData = {};
+
+            // Get form schema from company profile
+            {% if company_profile_fields %}
+                try {
+                    formData = {{ company_profile_fields|safe }};
+                } catch(e) {
+                    console.error("Error parsing form schema", e);
+                }
+            {% endif %}
+
+            // Get saved user data if exists
+            {% if jobcard_custom_data %}
+                try {
+                    userData = {{ jobcard_custom_data|safe }};
+                } catch(e) {
+                    console.error("Error parsing user data", e);
+                }
+            {% endif %}
+
+            // Initialize formRender
+            $(fbRender).formRender({
+                formData: formData,
+                dataType: 'json',
+                userData: userData
+            });
+        }
+
+        // --- Signature Pads ---
         const techCanvas = document.getElementById('tech-signature');
         if (techCanvas) {
             techPad = new SignaturePad(techCanvas, { backgroundColor: 'rgba(255, 255, 255, 0)' });
-            // Resize canvas for high DPI
              function resizeCanvas(canvas, pad) {
                 var ratio =  Math.max(window.devicePixelRatio || 1, 1);
                 canvas.width = canvas.offsetWidth * ratio;
                 canvas.height = canvas.offsetHeight * ratio;
                 canvas.getContext("2d").scale(ratio, ratio);
-                pad.clear(); // otherwise isEmpty() might return incorrect value
+                pad.clear();
             }
             resizeCanvas(techCanvas, techPad);
             window.addEventListener("resize", function() { resizeCanvas(techCanvas, techPad); });
@@ -327,6 +378,13 @@
     };
 
     window.prepareSignatures = function(event) {
+        // --- Capture Custom Fields Data ---
+        const fbRender = $('#custom-fields-container');
+        if (fbRender.length) {
+             const userData = fbRender.formRender('userData');
+             document.getElementById('id_custom_fields_data').value = JSON.stringify(userData);
+        }
+
         if (techPad && clientPad) {
             if (techPad.isEmpty() || clientPad.isEmpty()) {
                 alert("Both signatures are required.");

@@ -54,6 +54,7 @@ def create_jobcard(request):
 @user_passes_test(is_technician)
 def technician_job_detail(request, job_id):
     jobcard = get_object_or_404(JobCard, id=job_id, technician=request.user)
+    company_profile = CompanyProfile.objects.first()
 
     if jobcard.status != 'draft':
          # Prevent editing if submitted
@@ -78,12 +79,31 @@ def technician_job_detail(request, job_id):
         elif 'save_details' in request.POST:
             if formset.is_valid():
                 formset.save()
+
+            # Save custom fields data
+            custom_fields_json = request.POST.get('custom_fields_data')
+            if custom_fields_json:
+                try:
+                    jobcard.custom_fields_data = json.loads(custom_fields_json)
+                    jobcard.save()
+                except json.JSONDecodeError:
+                    pass
+
             return redirect('technician_job_detail', job_id=jobcard.id)
 
         elif 'submit_job' in request.POST:
             # Save details first if any changes
             if formset.is_valid():
                 formset.save()
+
+            # Save custom fields data
+            custom_fields_json = request.POST.get('custom_fields_data')
+            if custom_fields_json:
+                try:
+                    jobcard.custom_fields_data = json.loads(custom_fields_json)
+                    jobcard.save()
+                except json.JSONDecodeError:
+                    pass
 
             if signature_form.is_valid():
                 jobcard.technician_signature = signature_form.cleaned_data['technician_signature']
@@ -96,10 +116,17 @@ def technician_job_detail(request, job_id):
                 # For now, we assume frontend validation or just reload with errors
                 pass
 
+    # Serialize data for JS
+    company_profile_fields = json.dumps(company_profile.extra_fields) if company_profile and company_profile.extra_fields else '[]'
+    jobcard_custom_data = json.dumps(jobcard.custom_fields_data) if jobcard.custom_fields_data else '{}'
+
     return render(request, 'core/jobcard_detail_technician.html', {
         'jobcard': jobcard,
         'formset': formset,
-        'signature_form': signature_form
+        'signature_form': signature_form,
+        'company_profile': company_profile,
+        'company_profile_fields': company_profile_fields,
+        'jobcard_custom_data': jobcard_custom_data
     })
 
 # Try to import xhtml2pdf, but handle failure gracefully for dev environment
@@ -149,49 +176,6 @@ def manager_job_review(request, job_id):
         form = ManagerReviewForm(instance=jobcard)
 
     return render(request, 'core/jobcard_review.html', {'jobcard': jobcard, 'form': form})
-
-@login_required
-@user_passes_test(is_admin)
-def admin_dashboard(request):
-    jobcards = JobCard.objects.filter(status='archived').order_by('-updated_at')
-    return render(request, 'core/dashboard.html', {'jobcards': jobcards, 'role': 'Admin'})
-
-def generate_pdf(jobcard):
-    template_path = 'core/jobcard_pdf.html'
-    context = {'jobcard': jobcard}
-    html = render_to_string(template_path, context)
-
-    if pisa is None:
-        print("xhtml2pdf not installed")
-        return None
-
-    from io import BytesIO
-    result = BytesIO()
-    pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
-    if not pdf.err:
-        return result.getvalue()
-    return None
-
-def send_jobcard_email(jobcard):
-    subject = f'Job Card Completed - {jobcard.jobcard_id}'
-    message = f'Dear {jobcard.client_name},\n\nPlease find attached the completed job card {jobcard.jobcard_id}.\n\nBest regards,\n{jobcard.company_name}'
-
-    company_profile = CompanyProfile.objects.first()
-    from_email = company_profile.default_email if company_profile and company_profile.default_email else settings.DEFAULT_FROM_EMAIL
-
-    # Send to the client's email if available, otherwise fallback to default
-    recipient_list = [jobcard.client_email] if jobcard.client_email else [settings.DEFAULT_FROM_EMAIL]
-
-    email = EmailMessage(subject, message, from_email, recipient_list)
-
-    pdf_content = generate_pdf(jobcard)
-    if pdf_content:
-        email.attach(f'{jobcard.jobcard_id}.pdf', pdf_content, 'application/pdf')
-        email.send()
-    else:
-        print("PDF generation failed, email not sent.")
-
-# --- NEW MANAGER VIEWS ---
 
 @login_required
 @user_passes_test(is_manager)
@@ -250,3 +234,45 @@ def manager_user_edit(request, user_id):
     else:
         form = CustomUserChangeForm(instance=user)
     return render(request, 'core/manager_user_form.html', {'form': form, 'title': f'Edit User: {user.username}'})
+
+@login_required
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    jobcards = JobCard.objects.filter(status='archived').order_by('-updated_at')
+    return render(request, 'core/dashboard.html', {'jobcards': jobcards, 'role': 'Admin'})
+
+def generate_pdf(jobcard):
+    template_path = 'core/jobcard_pdf.html'
+    company_profile = CompanyProfile.objects.first()
+    context = {'jobcard': jobcard, 'company_profile': company_profile}
+    html = render_to_string(template_path, context)
+
+    if pisa is None:
+        print("xhtml2pdf not installed")
+        return None
+
+    from io import BytesIO
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+    if not pdf.err:
+        return result.getvalue()
+    return None
+
+def send_jobcard_email(jobcard):
+    subject = f'Job Card Completed - {jobcard.jobcard_id}'
+    message = f'Dear {jobcard.client_name},\n\nPlease find attached the completed job card {jobcard.jobcard_id}.\n\nBest regards,\n{jobcard.company_name}'
+
+    company_profile = CompanyProfile.objects.first()
+    from_email = company_profile.default_email if company_profile and company_profile.default_email else settings.DEFAULT_FROM_EMAIL
+
+    # Send to the client's email if available, otherwise fallback to default
+    recipient_list = [jobcard.client_email] if jobcard.client_email else [settings.DEFAULT_FROM_EMAIL]
+
+    email = EmailMessage(subject, message, from_email, recipient_list)
+
+    pdf_content = generate_pdf(jobcard)
+    if pdf_content:
+        email.attach(f'{jobcard.jobcard_id}.pdf', pdf_content, 'application/pdf')
+        email.send()
+    else:
+        print("PDF generation failed, email not sent.")
