@@ -10,10 +10,17 @@
         .signatures { margin-top: 30px; width: 100%; }
         .signature-box { width: 30%; float: left; text-align: center; margin-right: 3%; display: inline-block; vertical-align: top;}
         .signature-img { max-width: 150px; max-height: 80px; border-bottom: 1px solid #000; }
+        .custom-fields { margin-top: 20px; margin-bottom: 20px; border: 1px solid #ddd; padding: 10px; }
+        .custom-field-row { margin-bottom: 5px; }
+        .logo { max-height: 80px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <div class="header">
+        {% if company_profile.logo %}
+             <img src="{{ company_profile.logo.path }}" class="logo">
+        {% endif %}
+        
         <h1>Job Card: {{ jobcard.jobcard_id }}</h1>
         <p>{{ jobcard.company_name }}</p>
     </div>
@@ -44,6 +51,26 @@
             {% endfor %}
         </tbody>
     </table>
+    
+    {% if jobcard.custom_fields_data %}
+    <h3>Additional Information</h3>
+    <div class="custom-fields">
+        {% for field in jobcard.custom_fields_data %}
+            <div class="custom-field-row">
+                <strong>{{ field.label }}:</strong> 
+                <span>
+                    {% if field.userData %}
+                        {{ field.userData.0 }}
+                    {% elif field.value %}
+                         {{ field.value }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     
     {% if jobcard.manager_notes %}
     <h3>Notes</h3>

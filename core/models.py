@@ -56,6 +56,7 @@ class JobCard(models.Model):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     manager_notes = models.TextField(blank=True)
+    custom_fields_data = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
