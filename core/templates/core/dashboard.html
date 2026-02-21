@@ -1,67 +1,146 @@
 {% extends 'core/base.html' %}
 
+{% block title %}Dashboard | Fits Jobcard System{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ role }} Dashboard</h1>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4">
+    <h1 class="h2 fw-bold text-gray-800">
+        <i class="bi bi-grid-fill me-2 text-primary"></i>Dashboard
+    </h1>
     {% if role == 'Technician' %}
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{% url 'create_jobcard' %}" class="btn btn-sm btn-primary">
-            Create New Job Card
+        <a href="{% url 'create_jobcard' %}" class="btn btn-lg btn-primary shadow-sm rounded-pill px-4">
+            <i class="bi bi-plus-lg me-2"></i>New Job Card
         </a>
     </div>
     {% endif %}
 </div>
 
-{% if jobcards %}
-    <div class="table-responsive">
-        <table class="table table-striped table-sm">
-            <thead>
-                <tr>
-                    <th scope="col">Job ID</th>
-                    <th scope="col">Client</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Created At</th>
-                    <th scope="col">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for job in jobcards %}
-                <tr>
-                    <td>{{ job.jobcard_id }}</td>
-                    <td>{{ job.client_name }}</td>
-                    <td>
-                        {% if job.status == 'draft' %}
-                            <span class="badge bg-secondary">Draft</span>
-                        {% elif job.status == 'submitted' %}
-                            <span class="badge bg-warning text-dark">Submitted</span>
-                        {% elif job.status == 'signed_off' %}
-                            <span class="badge bg-success">Signed Off</span>
-                        {% elif job.status == 'archived' %}
-                            <span class="badge bg-info text-dark">Archived</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ job.created_at|date:"Y-m-d H:i" }}</td>
-                    <td>
-                        {% if role == 'Technician' %}
-                            {% if job.status == 'draft' %}
-                                <a href="{% url 'technician_job_detail' job.id %}" class="btn btn-sm btn-outline-primary">Continue</a>
-                            {% else %}
-                                <a href="{% url 'technician_job_detail' job.id %}" class="btn btn-sm btn-outline-secondary">View</a>
-                            {% endif %}
-                        {% elif role == 'Manager' %}
-                            <a href="{% url 'manager_job_review' job.id %}" class="btn btn-sm btn-primary">Review</a>
-                        {% elif role == 'Admin' %}
-                            <!-- Admin actions -->
-                             <span>-</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- Stats Cards (Example) -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2" style="border-left: 5px solid #4e73df;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Total Jobs</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ jobcards.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clipboard-data fa-2x text-gray-300" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-{% else %}
-    <p>No job cards found.</p>
-{% endif %}
 
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2" style="border-left: 5px solid #1cc88a;">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {% with completed_count=0 %}
+                            {% for job in jobcards %}
+                                {% if job.status == 'signed_off' or job.status == 'archived' %}
+                                    {% with completed_count=completed_count|add:1 %}{% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ completed_count }}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle-fill fa-2x text-gray-300" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add more stats cards as needed -->
+</div>
+
+<!-- Job Cards Table -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white">
+        <h6 class="m-0 font-weight-bold text-primary">Recent Job Cards</h6>
+    </div>
+    <div class="card-body">
+        {% if jobcards %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th scope="col" class="border-0 text-uppercase text-secondary font-weight-bold small">Job ID</th>
+                            <th scope="col" class="border-0 text-uppercase text-secondary font-weight-bold small">Client</th>
+                            <th scope="col" class="border-0 text-uppercase text-secondary font-weight-bold small">Status</th>
+                            <th scope="col" class="border-0 text-uppercase text-secondary font-weight-bold small">Created At</th>
+                            <th scope="col" class="border-0 text-uppercase text-secondary font-weight-bold small text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in jobcards %}
+                        <tr style="transition: background-color 0.2s;">
+                            <td class="fw-bold text-dark">{{ job.jobcard_id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar bg-light rounded-circle me-2 d-flex align-items-center justify-content-center text-primary fw-bold" style="width: 35px; height: 35px;">
+                                        {{ job.client_name|slice:":1" }}
+                                    </div>
+                                    {{ job.client_name }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if job.status == 'draft' %}
+                                    <span class="badge bg-secondary rounded-pill px-3 py-2">Draft</span>
+                                {% elif job.status == 'submitted' %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">Submitted</span>
+                                {% elif job.status == 'signed_off' %}
+                                    <span class="badge bg-success rounded-pill px-3 py-2">Signed Off</span>
+                                {% elif job.status == 'archived' %}
+                                    <span class="badge bg-info text-dark rounded-pill px-3 py-2">Archived</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted small">
+                                <i class="bi bi-clock me-1"></i> {{ job.created_at|date:"M d, Y H:i" }}
+                            </td>
+                            <td class="text-end">
+                                {% if role == 'Technician' %}
+                                    {% if job.status == 'draft' %}
+                                        <a href="{% url 'technician_job_detail' job.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                            Continue <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'technician_job_detail' job.id %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                            View <i class="bi bi-eye ms-1"></i>
+                                        </a>
+                                    {% endif %}
+                                {% elif role == 'Manager' %}
+                                    <a href="{% url 'manager_job_review' job.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                        Review <i class="bi bi-pencil-square ms-1"></i>
+                                    </a>
+                                {% elif role == 'Admin' %}
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled>
+                                        Archived
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox text-gray-300" style="font-size: 3rem; opacity: 0.5;"></i>
+                <p class="text-muted mt-3">No job cards found yet.</p>
+                {% if role == 'Technician' %}
+                <a href="{% url 'create_jobcard' %}" class="btn btn-primary mt-2">Get Started</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

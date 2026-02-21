@@ -1,144 +1,269 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>Job Card: {{ jobcard.jobcard_id }}</h2>
-            <a href="{% url 'technician_dashboard' %}" class="btn btn-outline-secondary">Back to Dashboard</a>
-        </div>
+{% block title %}Job Details | FitsJC{% endblock %}
 
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Client:</strong> {{ jobcard.client_name }}</p>
-                        <p><strong>Company:</strong> {{ jobcard.company_name }}</p>
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h4 class="mb-0 text-gray-800 fw-bold">Job Card #{{ jobcard.jobcard_id }}</h4>
+            <span class="text-muted small">Manage job details and capture signatures</span>
+        </div>
+        <a href="{% url 'technician_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">
+            <i class="bi bi-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Client Info Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); color: white;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-white bg-opacity-25 rounded-circle p-3 me-3">
+                        <i class="bi bi-person-fill fs-3"></i>
                     </div>
-                    <div class="col-md-6 text-end">
-                        <div class="mb-2">
-                            <strong>Start Time:</strong> {{ jobcard.start_time|default:"Not Started" }}
-                            {% if not jobcard.start_time %}
-                                <form method="post" class="d-inline ms-2">
-                                    {% csrf_token %}
-                                    <button type="submit" name="start_job" class="btn btn-success btn-sm">Start Job</button>
-                                </form>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <strong>End Time:</strong> {{ jobcard.end_time|default:"In Progress" }}
-                             {% if jobcard.start_time and not jobcard.end_time %}
-                                <form method="post" class="d-inline ms-2">
-                                    {% csrf_token %}
-                                    <button type="submit" name="stop_job" class="btn btn-danger btn-sm">Stop Job</button>
-                                </form>
-                            {% endif %}
-                        </div>
+                    <div>
+                        <h6 class="text-white-50 text-uppercase mb-1" style="letter-spacing: 1px;">Client</h6>
+                        <h3 class="mb-0 fw-bold">{{ jobcard.client_name }}</h3>
                     </div>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-white-50 text-uppercase mb-1" style="letter-spacing: 1px;">Company</h6>
+                    <p class="fs-5 mb-0">{{ jobcard.company_name }}</p>
+                </div>
+                 <div>
+                    <h6 class="text-white-50 text-uppercase mb-1" style="letter-spacing: 1px;">Contact Email</h6>
+                    <p class="fs-6 mb-0">{{ jobcard.client_email|default:"N/A" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Tracking Card -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-stopwatch me-2"></i>Time Tracking</h6>
+            </div>
+            <div class="card-body p-4 d-flex align-items-center justify-content-around flex-wrap">
+                <div class="text-center mb-3 mb-md-0">
+                    <div class="text-uppercase text-muted small fw-bold mb-2">Start Time</div>
+                    <div class="fs-4 fw-bold text-dark mb-3">
+                        {% if jobcard.start_time %}
+                            {{ jobcard.start_time|date:"H:i" }} <span class="fs-6 text-muted">{{ jobcard.start_time|date:"M d" }}</span>
+                        {% else %}
+                            --:--
+                        {% endif %}
+                    </div>
+                    {% if not jobcard.start_time %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" name="start_job" class="btn btn-success btn-lg rounded-pill px-5 shadow-sm pulse-button">
+                                <i class="bi bi-play-fill me-2"></i>Start Job
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-success btn-sm rounded-pill px-3" disabled>
+                            <i class="bi bi-check-circle-fill me-1"></i>Started
+                        </button>
+                    {% endif %}
+                </div>
+
+                <div class="vr mx-4 d-none d-md-block" style="height: 100px; opacity: 0.1;"></div>
+
+                <div class="text-center">
+                    <div class="text-uppercase text-muted small fw-bold mb-2">End Time</div>
+                    <div class="fs-4 fw-bold text-dark mb-3">
+                        {% if jobcard.end_time %}
+                            {{ jobcard.end_time|date:"H:i" }} <span class="fs-6 text-muted">{{ jobcard.end_time|date:"M d" }}</span>
+                        {% else %}
+                            --:--
+                        {% endif %}
+                    </div>
+                     {% if jobcard.start_time and not jobcard.end_time %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" name="stop_job" class="btn btn-danger btn-lg rounded-pill px-5 shadow-sm">
+                                <i class="bi bi-stop-fill me-2"></i>Stop Job
+                            </button>
+                        </form>
+                    {% elif jobcard.end_time %}
+                        <button class="btn btn-danger btn-sm rounded-pill px-3" disabled>
+                            <i class="bi bi-check-circle-fill me-1"></i>Stopped
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary btn-lg rounded-pill px-5" disabled>
+                            Stop Job
+                        </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <h3>Job Details</h3>
-    </div>
-    <div class="card-body">
-        <form method="post" id="job-details-form">
-            {% csrf_token %}
-            {{ formset.management_form }}
+<form method="post" id="job-details-form">
+    {% csrf_token %}
 
-            <div id="job-details-container">
+    <!-- Job Details List -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-list-check me-2"></i>Work Performed</h6>
+            <button type="button" id="add-row" class="btn btn-sm btn-outline-primary rounded-pill">
+                <i class="bi bi-plus-lg me-1"></i>Add Item
+            </button>
+        </div>
+        <div class="card-body p-0">
+            {{ formset.management_form }}
+            <div id="job-details-container" class="list-group list-group-flush">
                 {% for form in formset %}
-                    <div class="job-detail-row row mb-2 align-items-end">
-                        {{ form.id }}
-                        <div class="col-md-5">
-                            <label class="form-label">Description</label>
-                            {{ form.description }}
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Hardware</label>
-                            {{ form.hardware_replaced }}
-                        </div>
-                         <div class="col-md-2">
-                            <label class="form-label">Qty</label>
-                            {{ form.quantity }}
-                        </div>
-                        <div class="col-md-1">
-                             {% if formset.can_delete %}
-                                <div class="form-check">
-                                    {{ form.DELETE }}
-                                    <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Delete</label>
-                                </div>
-                            {% endif %}
+                    <div class="list-group-item p-4 job-detail-row">
+                        <div class="row g-3 align-items-end">
+                            {{ form.id }}
+                            <div class="col-md-5">
+                                <label class="form-label text-muted small text-uppercase fw-bold">Description</label>
+                                {{ form.description }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-muted small text-uppercase fw-bold">Hardware Replaced</label>
+                                {{ form.hardware_replaced }}
+                            </div>
+                             <div class="col-md-2">
+                                <label class="form-label text-muted small text-uppercase fw-bold">Qty</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-md-1 text-end">
+                                 {% if formset.can_delete %}
+                                    <div class="form-check d-inline-block">
+                                        {{ form.DELETE }}
+                                        <label class="form-check-label text-danger small" for="{{ form.DELETE.id_for_label }}">
+                                            <i class="bi bi-trash"></i>
+                                        </label>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                    <hr>
                 {% endfor %}
             </div>
-
-            <button type="button" id="add-row" class="btn btn-secondary btn-sm mt-2">+ Add Item</button>
-            <button type="submit" name="save_details" class="btn btn-primary btn-sm mt-2">Save Details</button>
-
-            {% if jobcard.end_time %}
-            <hr class="my-4">
-            <h3>Signatures</h3>
-            <div class="row">
-                <div class="col-md-6">
-                    <h4>Technician Signature</h4>
-                    <div class="border bg-light" style="width: 400px; height: 200px;">
-                        <canvas id="tech-signature" width="400" height="200"></canvas>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSignature('tech-signature')">Clear</button>
-                </div>
-                <div class="col-md-6">
-                    <h4>Client Signature</h4>
-                    <div class="border bg-light" style="width: 400px; height: 200px;">
-                        <canvas id="client-signature" width="400" height="200"></canvas>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSignature('client-signature')">Clear</button>
-                </div>
+            <div class="p-3 bg-light border-top">
+                <button type="submit" name="save_details" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-save me-2"></i>Save Progress
+                </button>
             </div>
-
-            {{ signature_form.technician_signature }}
-            {{ signature_form.client_signature }}
-
-            <div class="mt-4 text-center">
-                <button type="submit" name="submit_job" class="btn btn-success btn-lg" onclick="return prepareSignatures(event)">Submit Job Card</button>
-            </div>
-            {% else %}
-            <div class="alert alert-warning mt-4">You must stop the job before signing and submitting.</div>
-            {% endif %}
-        </form>
+        </div>
     </div>
-</div>
+
+    <!-- Signatures Section -->
+    {% if jobcard.end_time %}
+    <div class="row">
+        <div class="col-12">
+             <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 font-weight-bold text-primary"><i class="bi bi-pen-fill me-2"></i>Signatures</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label text-uppercase text-muted small fw-bold mb-2">Technician Signature</label>
+                            <div class="signature-pad-container border rounded-3 bg-light position-relative overflow-hidden" style="height: 220px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                                <canvas id="tech-signature" class="w-100 h-100"></canvas>
+                                <div class="position-absolute bottom-0 end-0 p-2">
+                                    <button type="button" class="btn btn-sm btn-light text-danger shadow-sm border" onclick="clearSignature('tech-signature')">
+                                        <i class="bi bi-eraser-fill"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label text-uppercase text-muted small fw-bold mb-2">Client Signature</label>
+                            <div class="signature-pad-container border rounded-3 bg-light position-relative overflow-hidden" style="height: 220px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+                                <canvas id="client-signature" class="w-100 h-100"></canvas>
+                                <div class="position-absolute bottom-0 end-0 p-2">
+                                    <button type="button" class="btn btn-sm btn-light text-danger shadow-sm border" onclick="clearSignature('client-signature')">
+                                        <i class="bi bi-eraser-fill"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{ signature_form.technician_signature }}
+                    {{ signature_form.client_signature }}
+
+                    <div class="mt-5 text-center">
+                        <button type="submit" name="submit_job" class="btn btn-success btn-lg rounded-pill px-5 py-3 shadow-lg" onclick="return prepareSignatures(event)">
+                            <i class="bi bi-send-check-fill me-2"></i>Submit Job Card
+                        </button>
+                        <p class="text-muted small mt-2">Once submitted, this job card cannot be edited.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning shadow-sm border-0 rounded-3 d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+        <div>
+            <strong>Wait!</strong> You must stop the job timer before you can sign and submit this job card.
+        </div>
+    </div>
+    {% endif %}
+
+</form>
 
 <!-- Hidden Empty Form for JS -->
 <div id="empty-form" style="display:none;">
-    <div class="job-detail-row row mb-2 align-items-end">
-        <input type="hidden" name="details-__prefix__-id" id="id_details-__prefix__-id">
-        <div class="col-md-5">
-            <label class="form-label">Description</label>
-            <input type="text" name="details-__prefix__-description" class="form-control" placeholder="Description" maxlength="255" id="id_details-__prefix__-description">
-        </div>
-        <div class="col-md-4">
-            <label class="form-label">Hardware</label>
-            <input type="text" name="details-__prefix__-hardware_replaced" class="form-control" placeholder="Hardware Replaced" maxlength="255" id="id_details-__prefix__-hardware_replaced">
-        </div>
-         <div class="col-md-2">
-            <label class="form-label">Qty</label>
-            <input type="number" name="details-__prefix__-quantity" class="form-control" value="1" min="1" id="id_details-__prefix__-quantity">
-        </div>
-        <div class="col-md-1">
-             <span class="text-muted">Delete</span>
-             <input type="checkbox" name="details-__prefix__-DELETE" id="id_details-__prefix__-DELETE">
+    <div class="list-group-item p-4 job-detail-row">
+        <div class="row g-3 align-items-end">
+            <input type="hidden" name="details-__prefix__-id" id="id_details-__prefix__-id">
+            <div class="col-md-5">
+                <label class="form-label text-muted small text-uppercase fw-bold">Description</label>
+                <input type="text" name="details-__prefix__-description" class="form-control" placeholder="Description" maxlength="255" id="id_details-__prefix__-description">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small text-uppercase fw-bold">Hardware Replaced</label>
+                <input type="text" name="details-__prefix__-hardware_replaced" class="form-control" placeholder="Hardware Replaced" maxlength="255" id="id_details-__prefix__-hardware_replaced">
+            </div>
+             <div class="col-md-2">
+                <label class="form-label text-muted small text-uppercase fw-bold">Qty</label>
+                <input type="number" name="details-__prefix__-quantity" class="form-control" value="1" min="1" id="id_details-__prefix__-quantity">
+            </div>
+            <div class="col-md-1 text-end">
+                 <span class="text-danger small" style="cursor: pointer;"><i class="bi bi-trash"></i></span>
+                 <input type="checkbox" name="details-__prefix__-DELETE" id="id_details-__prefix__-DELETE" class="d-none">
+            </div>
         </div>
     </div>
-    <hr>
 </div>
+
+<style>
+    /* Custom Input Styling for this page */
+    .job-detail-row .form-control {
+        border: none;
+        border-bottom: 2px solid #e3e6f0;
+        border-radius: 0;
+        background-color: transparent;
+        padding-left: 0;
+    }
+    .job-detail-row .form-control:focus {
+        box-shadow: none;
+        border-color: #4e73df;
+    }
+
+    .pulse-button {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 200, 138, 0.7); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(28, 200, 138, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(28, 200, 138, 0); }
+    }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script>
@@ -168,7 +293,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const techCanvas = document.getElementById('tech-signature');
         if (techCanvas) {
-            techPad = new SignaturePad(techCanvas);
+            techPad = new SignaturePad(techCanvas, { backgroundColor: 'rgba(255, 255, 255, 0)' });
             // Resize canvas for high DPI
              function resizeCanvas(canvas, pad) {
                 var ratio =  Math.max(window.devicePixelRatio || 1, 1);
@@ -178,11 +303,12 @@
                 pad.clear(); // otherwise isEmpty() might return incorrect value
             }
             resizeCanvas(techCanvas, techPad);
+            window.addEventListener("resize", function() { resizeCanvas(techCanvas, techPad); });
         }
 
         const clientCanvas = document.getElementById('client-signature');
         if (clientCanvas) {
-            clientPad = new SignaturePad(clientCanvas);
+            clientPad = new SignaturePad(clientCanvas, { backgroundColor: 'rgba(255, 255, 255, 0)' });
              function resizeCanvas(canvas, pad) {
                 var ratio =  Math.max(window.devicePixelRatio || 1, 1);
                 canvas.width = canvas.offsetWidth * ratio;
@@ -191,6 +317,7 @@
                 pad.clear();
             }
             resizeCanvas(clientCanvas, clientPad);
+            window.addEventListener("resize", function() { resizeCanvas(clientCanvas, clientPad); });
         }
     });
 

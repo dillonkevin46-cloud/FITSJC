@@ -1,170 +1,172 @@
 {% extends 'core/base.html' %}
 
+{% block title %}Company Settings | FitsJC{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-3">
-        <div class="list-group">
-            <a href="{% url 'manager_dashboard' %}" class="list-group-item list-group-item-action">
-                Dashboard
-            </a>
-            <a href="{% url 'manager_settings' %}" class="list-group-item list-group-item-action active">
-                Settings
-            </a>
-            <a href="{% url 'manager_user_list' %}" class="list-group-item list-group-item-action">
-                Manage Users
-            </a>
+<div class="row">
+    <!-- Sidebar Navigation -->
+    <div class="col-lg-3 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="list-group list-group-flush rounded-3">
+                <a href="{% url 'manager_dashboard' %}" class="list-group-item list-group-item-action py-3 border-0">
+                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                </a>
+                <a href="{% url 'manager_settings' %}" class="list-group-item list-group-item-action py-3 border-0 active bg-primary text-white fw-bold">
+                    <i class="bi bi-gear-fill me-2"></i>Company Settings
+                </a>
+                <a href="{% url 'manager_user_list' %}" class="list-group-item list-group-item-action py-3 border-0">
+                    <i class="bi bi-people-fill me-2"></i>Manage Users
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="col-md-9">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">Company Settings</h4>
+    <!-- Main Settings Form -->
+    <div class="col-lg-9">
+        <div class="card shadow border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="m-0 fw-bold text-primary"><i class="bi bi-building me-2"></i>Company Profile</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form method="post" enctype="multipart/form-data" id="settings-form">
                     {% csrf_token %}
 
-                    <div class="mb-3">
-                        <label class="form-label">Company Logo</label>
-                        {{ form.logo }}
-                        {% if company_profile.logo %}
-                            <div class="mt-2">
-                                <img src="{{ company_profile.logo.url }}" alt="Current Logo" style="max-height: 100px;">
-                                <small class="text-muted d-block">Current Logo</small>
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Company Logo</label>
+                                <div class="border rounded-3 p-3 bg-light d-flex align-items-center justify-content-center" style="height: 150px; border-style: dashed !important;">
+                                    {% if company_profile.logo %}
+                                        <img src="{{ company_profile.logo.url }}" alt="Current Logo" class="img-fluid" style="max-height: 100%;">
+                                    {% else %}
+                                        <div class="text-muted">
+                                            <i class="bi bi-image fs-1 d-block mb-2"></i>
+                                            <span>No Logo Uploaded</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-2">
+                                    {{ form.logo }}
+                                </div>
                             </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Address</label>
-                        {{ form.address }}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Default Email</label>
-                        {{ form.default_email }}
-                        <div class="form-text">Used as the sender for job card emails if configured.</div>
-                    </div>
-
-                    <hr>
-
-                    <div class="mb-3">
-                        <label class="form-label h5">Extra Fields (Custom Data)</label>
-                        <p class="text-muted small">Define custom fields that will appear on job cards or be stored with company profile.</p>
-
-                        <div id="extra-fields-container">
-                            <!-- Dynamic fields will be injected here -->
                         </div>
 
-                        <button type="button" class="btn btn-outline-secondary btn-sm mt-2" id="add-field-btn">
-                            + Add Custom Field
-                        </button>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Company Address</label>
+                                {{ form.address }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-muted small text-uppercase">Default Email</label>
+                                {{ form.default_email }}
+                                <div class="form-text text-muted small"><i class="bi bi-info-circle me-1"></i>Used as the sender for automated job card emails.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-5">
+
+                    <!-- Visual Form Builder -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="fw-bold text-primary mb-1"><i class="bi bi-ui-checks me-2"></i>Custom Field Builder</h5>
+                                <p class="text-muted small mb-0">Drag and drop fields to create a custom form for your technicians.</p>
+                            </div>
+                            <span class="badge bg-light text-dark border"><i class="bi bi-grip-vertical me-1"></i>Visual Editor</span>
+                        </div>
+
+                        <div class="card bg-light border-0">
+                            <div class="card-body p-2">
+                                <div id="fb-editor"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Hidden input to store the JSON string -->
                     {{ form.extra_fields }}
 
-                    <div class="d-grid gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <div class="d-flex justify-content-end pt-3">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm">
+                            <i class="bi bi-check-circle-fill me-2"></i>Save Settings
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery & jQuery UI (Required for formBuilder) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+<!-- formBuilder -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/formBuilder/3.8.3/form-builder.min.js"></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const container = document.getElementById('extra-fields-container');
-        const addButton = document.getElementById('add-field-btn');
-        const hiddenInput = document.getElementById('id_extra_fields');
-        const form = document.getElementById('settings-form');
+    jQuery(function($) {
+        var fbEditor = document.getElementById('fb-editor');
+        var hiddenInput = document.getElementById('id_extra_fields');
+        var form = document.getElementById('settings-form');
 
-        // Parse existing JSON data
-        let existingData = {};
+        // Load existing data if available
+        var formData = [];
         try {
             if (hiddenInput.value) {
-                existingData = JSON.parse(hiddenInput.value);
+                formData = JSON.parse(hiddenInput.value);
             }
         } catch (e) {
             console.error("Error parsing existing JSON data:", e);
         }
 
-        // Function to create a field row
-        function createRow(key = '', value = '') {
-            const row = document.createElement('div');
-            row.className = 'row mb-2 extra-field-row';
+        var options = {
+            formData: formData,
+            dataType: 'json',
+            disableFields: ['autocomplete', 'button', 'header', 'hidden', 'paragraph', 'file'], // Disable complex fields not needed
+            showActionButtons: false, // We'll use our own save button
+            controlPosition: 'left'
+        };
 
-            // Key Input
-            const colKey = document.createElement('div');
-            colKey.className = 'col-md-5';
-            const inputKey = document.createElement('input');
-            inputKey.type = 'text';
-            inputKey.className = 'form-control field-key';
-            inputKey.placeholder = 'Field Name (Key)';
-            inputKey.value = key;
-            colKey.appendChild(inputKey);
-
-            // Value Input
-            const colValue = document.createElement('div');
-            colValue.className = 'col-md-5';
-            const inputValue = document.createElement('input');
-            inputValue.type = 'text';
-            inputValue.className = 'form-control field-value';
-            inputValue.placeholder = 'Default Value';
-            inputValue.value = value;
-            colValue.appendChild(inputValue);
-
-            // Delete Button
-            const colDel = document.createElement('div');
-            colDel.className = 'col-md-2';
-            const btnDel = document.createElement('button');
-            btnDel.type = 'button';
-            btnDel.className = 'btn btn-danger btn-sm delete-row-btn';
-            btnDel.textContent = 'Delete';
-            btnDel.addEventListener('click', function() {
-                row.remove();
-            });
-            colDel.appendChild(btnDel);
-
-            row.appendChild(colKey);
-            row.appendChild(colValue);
-            row.appendChild(colDel);
-
-            container.appendChild(row);
-        }
-
-        // Populate existing fields
-        if (existingData && typeof existingData === 'object') {
-            for (const [key, value] of Object.entries(existingData)) {
-                createRow(key, value);
-            }
-        }
-
-        // Add new field button
-        addButton.addEventListener('click', function() {
-            createRow();
-        });
+        var formBuilder = $(fbEditor).formBuilder(options);
 
         // Intercept form submission
         form.addEventListener('submit', function(e) {
-            const rows = container.querySelectorAll('.extra-field-row');
-            const data = {};
+            // Get the JSON data from formBuilder
+            var json = formBuilder.actions.getData('json');
 
-            rows.forEach(row => {
-                const keyInput = row.querySelector('.field-key');
-                const valueInput = row.querySelector('.field-value');
-                const key = keyInput.value.trim();
-                const value = valueInput.value.trim();
+            // Inject into hidden input
+            hiddenInput.value = json;
 
-                if (key) {
-                    data[key] = value;
-                }
-            });
-
-            hiddenInput.value = JSON.stringify(data);
+            // Allow form to submit normally
+            return true;
         });
     });
 </script>
+
+<style>
+    /* Custom Styles for formBuilder to match theme */
+    .cb-wrap .btn-default {
+        background-color: white;
+        border: 1px solid #e3e6f0;
+        color: #5a5c69;
+    }
+    .cb-wrap .btn-default:hover {
+        background-color: #f8f9fc;
+    }
+    .stage-wrap {
+        background-color: white;
+        border-radius: 8px;
+        min-height: 400px;
+    }
+    .form-wrap.form-builder .stage-wrap {
+        border: 2px dashed #e3e6f0;
+    }
+    .frmb .field-actions .btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+</style>
 {% endblock %}
