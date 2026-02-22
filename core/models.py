@@ -24,7 +24,7 @@ class CompanyProfile(models.Model):
     logo = models.ImageField(upload_to='company_logos/', blank=True, null=True)
     address = models.TextField(blank=True)
     default_email = models.EmailField(blank=True, null=True)
-    extra_fields = models.JSONField(default=dict, blank=True)
+    extra_fields = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return "Company Profile"

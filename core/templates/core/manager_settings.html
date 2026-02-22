@@ -115,8 +115,14 @@
         // Load existing data if available
         var formData = [];
         try {
-            if (hiddenInput.value) {
-                formData = JSON.parse(hiddenInput.value);
+            if (hiddenInput.value && hiddenInput.value !== '{}' && hiddenInput.value !== 'null') {
+                var parsedData = JSON.parse(hiddenInput.value);
+                if (Array.isArray(parsedData)) {
+                    formData = parsedData; // It's a valid array
+                } else {
+                    console.warn("FormBuilder expected an array but got an object. Resetting to empty array.");
+                    formData = [];
+                }
             }
         } catch (e) {
             console.error("Error parsing existing JSON data:", e);
