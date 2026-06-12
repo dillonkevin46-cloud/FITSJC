@@ -1,0 +1,417 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Jobcard - {{ user.username }}{% endblock %}
+
+{% block extra_css %}
+
+<style>
+    .jobcard-container {
+        background-color: #ffffff;
+        padding: 40px;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.08);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .jobcard-header {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        color: #fff;
+        margin: -40px -40px 40px -40px;
+        padding: 30px 40px;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .jobcard-header h3 { color: #fff !important; font-weight: 700; letter-spacing: -0.5px; }
+    .signature-pad-wrapper {
+        border-radius: 12px !important;
+        overflow: hidden;
+        border: 2px dashed #cbd5e1 !important;
+        transition: border 0.2s ease;
+    }
+    .signature-pad-wrapper:hover { border-color: #94a3b8 !important; }
+    .signature-pad-wrapper canvas { cursor: crosshair; }
+    .formset-row {
+        background-color: #fff;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .formset-row:hover {
+        background-color: #f8fafc;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .table-input input {
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 8px 12px;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    .table-input input:focus, .table-input input:hover {
+        border: 1px solid #3b82f6;
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    /* Hide crispy labels in table */
+    #items-table label { display: none; }
+    #items-table .mb-3 { margin-bottom: 0 !important; }
+    
+    /* Enhance inputs */
+    input.form-control, select.form-control, select.form-select, textarea.form-control {
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        padding: 0.6rem 1rem;
+        transition: all 0.2s ease;
+    }
+    input.form-control:focus, select.form-control:focus, select.form-select:focus, textarea.form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mb-5">
+    <div class="col-xl-10">
+        <div class="jobcard-container">
+            <div class="jobcard-header">
+                <h3 class="mb-0 text-dark fw-bold"><i class="bi bi-card-checklist me-2"></i>Job Card</h3>
+                <span class="badge bg-white text-dark rounded-pill px-3 py-2 fs-6 shadow-sm">
+                    {% if jobcard.pk %}{{ jobcard.jobcard_number }}{% else %}New Draft{% endif %}
+                </span>
+            </div>
+
+            <form method="post" id="jobcardForm" enctype="multipart/form-data"
+                  {% if jobcard.pk %}data-autosave-url="{% url 'jobcard_autosave' jobcard.pk %}"{% endif %}>
+                {% csrf_token %}
+
+                {% crispy form %}
+
+                <!-- Formset directly embedded inside the form tag to ensure it works correctly -->
+                <div id="items-table-container" class="table-responsive rounded shadow-sm border border-light mb-4 mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 px-2 bg-light p-2 border-bottom">
+                        <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-tools me-2"></i>Job Details & Parts Used</h5>
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3" id="add-item-btn">
+                            <i class="bi bi-plus"></i> Add Row
+                        </button>
+                    </div>
+
+                    {{ item_formset.management_form }}
+
+                    <table class="table table-borderless align-middle mb-0" id="items-table">
+                        <thead class="table-light text-muted small border-bottom">
+                            <tr>
+                                <th style="width: 40%">Description of Work</th>
+                                <th style="width: 30%">Parts / Serial No.</th>
+                                <th style="width: 10%">Qty</th>
+                                <th style="width: 15%">Person Helped</th>
+                                <th style="width: 5%" class="text-center"><i class="bi bi-trash"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="formset-body">
+                            {% for form in item_formset %}
+                                <tr class="formset-row border-bottom">
+                                    {{ form.id }}
+                                    <td class="table-input">{{ form.description|as_crispy_field }}</td>
+                                    <td class="table-input">{{ form.parts_used|as_crispy_field }}</td>
+                                    <td class="table-input">{{ form.qty|as_crispy_field }}</td>
+                                    <td class="table-input">{{ form.person_helped|as_crispy_field }}</td>
+                                    <td class="text-center align-middle">
+                                        {% if item_formset.can_delete %}
+                                            <div class="form-check d-flex justify-content-center">
+                                                {{ form.DELETE }}
+                                            </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex align-items-center justify-content-between mt-5 pt-3 border-top">
+                    <div id="autosave-status" class="text-muted small fw-medium">
+                        <i class="bi bi-cloud-check me-1"></i>Ready
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" name="action" value="draft" class="btn btn-light border px-4 shadow-sm" id="btn-save-draft">
+                            Save Draft
+                        </button>
+                        <button type="submit" name="action" value="submit" class="btn btn-primary px-4 shadow" id="btn-submit-final" onclick="return confirm('Submit and email to client? This locks the jobcard.');">
+                            <i class="bi bi-send me-2"></i>Submit & Email
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Create Company Modal -->
+<div class="modal fade" id="createCompanyModal" tabindex="-1" aria-labelledby="createCompanyModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="createCompanyModalLabel"><i class="bi bi-building me-2"></i>Create New Company</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-error" class="alert alert-danger d-none"></div>
+        <form id="ajaxCompanyForm">
+            <div class="mb-3">
+                <label for="comp_name" class="form-label">Company Name *</label>
+                <input type="text" class="form-control" id="comp_name" required>
+            </div>
+            <div class="mb-3">
+                <label for="comp_email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="comp_email">
+            </div>
+            <div class="mb-3">
+                <label for="comp_contact" class="form-label">Contact Number</label>
+                <input type="text" class="form-control" id="comp_contact">
+            </div>
+            <div class="mb-3">
+                <label for="comp_address" class="form-label">Address</label>
+                <textarea class="form-control" id="comp_address" rows="2"></textarea>
+            </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-save-company">Save Company</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // --- Layout Reorder ---
+    // The instructions say: "Move the 'Job Details' section to be immediately underneath 'Time Start / Stop' section. Tech Notes should remain at bottom."
+    // We achieve this safely by letting crispy render the main form, and then using JS to relocate our formset container
+    // precisely where we want it within the DOM to prevent styling layout breaks while keeping it inside the <form>.
+    document.addEventListener("DOMContentLoaded", function() {
+        const itemsContainer = document.getElementById('items-table-container');
+        // Find the hr divider before tech notes and insert the table before it
+        const insertTarget = document.getElementById('tech-notes-divider');
+        if(itemsContainer && insertTarget) {
+            insertTarget.parentNode.insertBefore(itemsContainer, insertTarget);
+        }
+    });
+
+    // --- Time Tracking ---
+    function setDateTime(fieldId) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById(fieldId).value = now.toISOString().slice(0, 16);
+        triggerAutosave();
+    }
+
+    // --- AJAX Company Creation ---
+    document.getElementById('btn-save-company').addEventListener('click', function() {
+        const name = document.getElementById('comp_name').value;
+        const email = document.getElementById('comp_email').value;
+        const contact = document.getElementById('comp_contact').value;
+        const address = document.getElementById('comp_address').value;
+        const errorDiv = document.getElementById('modal-error');
+
+        if(!name) {
+            errorDiv.innerText = "Company name is required.";
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerText = "Saving...";
+
+        fetch("{% url 'company_create_ajax' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({
+                name: name, email: email, contact_number: contact, address: address
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                const select = document.getElementById('id_company');
+                const option = document.createElement('option');
+                option.value = data.id;
+                option.text = data.name;
+                select.add(option);
+                select.value = data.id;
+
+                const modalEl = document.getElementById('createCompanyModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                modal.hide();
+                document.getElementById('ajaxCompanyForm').reset();
+                errorDiv.classList.add('d-none');
+
+                triggerAutosave();
+            } else {
+                errorDiv.innerText = data.message;
+                errorDiv.classList.remove('d-none');
+            }
+        })
+        .catch(err => {
+            errorDiv.innerText = "Network error.";
+            errorDiv.classList.remove('d-none');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerText = "Save Company";
+        });
+    });
+
+    // --- Signature Pads ---
+    function initPad(canvasId, dataFieldId) {
+        const canvas = document.getElementById(canvasId);
+        if(!canvas) return null;
+
+        function resizeCanvas() {
+            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        const pad = new SignaturePad(canvas, {
+            penColor: "rgb(0, 0, 128)",
+            backgroundColor: "rgba(255, 255, 255, 0)"
+        });
+
+        const hiddenInput = document.getElementById(dataFieldId);
+        if (hiddenInput && hiddenInput.value) {
+            pad.fromDataURL(hiddenInput.value);
+        }
+
+        pad.addEventListener("endStroke", () => {
+             if (hiddenInput) hiddenInput.value = pad.toDataURL();
+             triggerAutosave();
+        });
+
+        return pad;
+    }
+
+    const techPad = initPad('tech_sig_pad', 'id_tech_signature_data');
+    const clientPad = initPad('client_sig_pad', 'id_client_signature_data');
+
+    function clearPad(canvasId) {
+        if(canvasId === 'tech_sig_pad' && techPad) {
+            techPad.clear();
+            document.getElementById('id_tech_signature_data').value = '';
+        }
+        if(canvasId === 'client_sig_pad' && clientPad) {
+            clientPad.clear();
+            document.getElementById('id_client_signature_data').value = '';
+        }
+        triggerAutosave();
+    }
+
+    // --- Form Submission Check ---
+    document.getElementById('jobcardForm').addEventListener('submit', function(e) {
+        if (techPad && !techPad.isEmpty()) {
+            document.getElementById('id_tech_signature_data').value = techPad.toDataURL();
+        }
+        if (clientPad && !clientPad.isEmpty()) {
+            document.getElementById('id_client_signature_data').value = clientPad.toDataURL();
+        }
+    });
+
+    // --- Dynamic Formset Row Logic ---
+    document.getElementById('add-item-btn').addEventListener('click', function() {
+        // Find management form data
+        const totalFormsInput = document.getElementById('id_items-TOTAL_FORMS');
+        const formIdx = parseInt(totalFormsInput.value);
+        const formTableBody = document.getElementById('formset-body');
+
+        // Clone the first row as a template
+        const emptyRow = formTableBody.rows[0].cloneNode(true);
+
+        // Update all name/id attributes using Regex replacement
+        const regex = new RegExp(`items-(\\d+)-`, 'g');
+        emptyRow.innerHTML = emptyRow.innerHTML.replace(regex, `items-${formIdx}-`);
+
+        // Clear out any user data from the cloned row
+        const inputs = emptyRow.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if(input.type === 'checkbox') {
+                input.checked = false;
+            } else {
+                input.value = '';
+            }
+            // Critically ensure hidden IDs are blank for a new object
+            if(input.name.endsWith('-id')) {
+                input.value = '';
+            }
+        });
+
+        // Append and update count
+        formTableBody.appendChild(emptyRow);
+        totalFormsInput.value = formIdx + 1;
+    });
+
+    // --- Auto-Save ---
+    const form = document.getElementById('jobcardForm');
+    const autosaveUrl = form.getAttribute('data-autosave-url');
+    let autosaveTimer;
+
+    function triggerAutosave() {
+        if (!autosaveUrl) return;
+
+        clearTimeout(autosaveTimer);
+        const statusEl = document.getElementById('autosave-status');
+        statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Saving...';
+        statusEl.classList.add('text-primary');
+        statusEl.classList.remove('text-muted', 'text-success', 'text-danger');
+
+        autosaveTimer = setTimeout(() => {
+            const formData = new FormData(form);
+            if (techPad && !techPad.isEmpty()) formData.set('tech_signature_data', techPad.toDataURL());
+            if (clientPad && !clientPad.isEmpty()) formData.set('client_signature_data', clientPad.toDataURL());
+
+            fetch(autosaveUrl, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    statusEl.innerHTML = '<i class="bi bi-cloud-check-fill me-1"></i>Saved at ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    statusEl.classList.add('text-success');
+                    statusEl.classList.remove('text-primary');
+                } else {
+                    statusEl.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>Save Error';
+                    statusEl.classList.add('text-danger');
+                    statusEl.classList.remove('text-primary');
+                }
+            })
+            .catch(error => {
+                statusEl.innerHTML = '<i class="bi bi-wifi-off me-1"></i>Offline / Error';
+                statusEl.classList.add('text-danger');
+                statusEl.classList.remove('text-primary');
+            });
+        }, 2000);
+    }
+
+    if (autosaveUrl) {
+        form.addEventListener('input', function(e) {
+             if (e.target.type !== 'hidden') triggerAutosave();
+        });
+    }
+</script>
+{% endblock %}
